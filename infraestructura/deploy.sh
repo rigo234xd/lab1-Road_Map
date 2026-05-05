@@ -78,39 +78,40 @@ aws ec2 create-tags --resources $SG_ID --tags Key=Name,Value=RoadMap-sg
 aws ec2 authorize-security-group-ingress --group-id $SG_ID \
   --protocol tcp --port 80 --cidr 0.0.0.0/0
 
-# Permitir tráfico SSH solo desde tu IP actual
+# Permitir tráfico SSH solo desde la IP pública del usuario
+IP_PUBLICA=$(curl -s -4 ifconfig.me)
+
 aws ec2 authorize-security-group-ingress --group-id $SG_ID \
-  --protocol tcp --port 22 --cidr $(curl -s ifconfig.me)/32
+  --protocol tcp --port 22 --cidr ${IP_PUBLICA}/32
 
 echo "Security Group configurado: $SG_ID"
 
-# 7. LANZAR INSTANCIA EC2 CON USER DATA Y MONTAJE DE DISCO
+# 7. LANZAR INSTANCIA EC2
 echo "Lanzando instancia EC2..."
 export INSTANCE_ID=$(aws ec2 run-instances \
-  --image-id ami-0c820c196a818d66b \
-  --instance-type t3.micro \
+  --image-id ami-0453ec754f44f9a4a \
+  --instance-type t2.micro \
   --key-name vockey \
   --subnet-id $SUBNET_PUB \
   --security-group-ids $SG_ID \
   --associate-public-ip-address \
   --user-data '#!/bin/bash
-# Instalar y encender Apache (Servidor Web)
 yum update -y
 yum install -y httpd
 systemctl start httpd
 systemctl enable httpd
 
-# Esperar a que el disco EBS se conecte físicamente
+# Espera dinámica al disco extra
 while [ ! -b /dev/xvdf ]; do
   sleep 5
 done
 
-# Formatear el disco extra y montarlo en /mnt/datos
+# Formateo y montaje del EBS
 mkfs -t ext4 /dev/xvdf
 mkdir -p /mnt/datos
 mount /dev/xvdf /mnt/datos
 
-# Guardar la web en el disco extra y enlazarla a Apache
+# Configuración del sitio RoadMap en el volumen extra
 echo "<h1>Bienvenido al sistema RoadMap</h1>" > /mnt/datos/index.html
 rm -rf /var/www/html
 ln -s /mnt/datos /var/www/html' \
