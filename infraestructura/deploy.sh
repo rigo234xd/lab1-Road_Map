@@ -90,8 +90,8 @@ echo "Security Group configurado: $SG_ID"
 echo "Lanzando instancia EC2..."
 export INSTANCE_ID=$(aws ec2 run-instances \
   --image-id ami-0453ec754f44f9a4a \
-  --instance-type t2.micro \
-  --key-name vockey \
+  --instance-type t3.micro \
+  --key-name lab1-llave \
   --subnet-id $SUBNET_PUB \
   --security-group-ids $SG_ID \
   --associate-public-ip-address \
