@@ -31,7 +31,7 @@ aws ec2 modify-subnet-attribute --subnet-id $SUBNET_PUB --map-public-ip-on-launc
 
 echo "Subred Pública creada: $SUBNET_PUB"
 
-# 3.5 CREAR SUBRED PRIVADA
+# 4 CREAR SUBRED PRIVADA
 echo "Creando subred privada..."
 export SUBNET_PRV=$(aws ec2 create-subnet --vpc-id $VPC_ID \
   --cidr-block 10.0.2.0/24 --availability-zone $AZ2 \
@@ -41,7 +41,7 @@ aws ec2 create-tags --resources $SUBNET_PRV --tags Key=Name,Value=RoadMap-subred
 
 echo "Subred Privada creada: $SUBNET_PRV"
 
-# 4. INTERNET GATEWAY
+# 5. INTERNET GATEWAY
 echo "Creando Internet Gateway..."
 export IGW_ID=$(aws ec2 create-internet-gateway \
   --query 'InternetGateway.InternetGatewayId' --output text)
@@ -51,7 +51,7 @@ aws ec2 attach-internet-gateway --internet-gateway-id $IGW_ID --vpc-id $VPC_ID
 
 echo "Internet Gateway conectado: $IGW_ID"
 
-# 5. TABLA DE RUTEO
+# 6. TABLA DE RUTEO
 echo "Creando tabla de ruteo..."
 export RT_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID \
   --query 'RouteTable.RouteTableId' --output text)
@@ -67,7 +67,7 @@ aws ec2 associate-route-table --route-table-id $RT_ID --subnet-id $SUBNET_PUB
 
 echo "Tabla de Ruteo configurada: $RT_ID"
 
-# 6. SECURITY GROUP
+# 7. SECURITY GROUP
 echo "Creando Security Group..."
 export SG_ID=$(aws ec2 create-security-group --group-name RoadMap-sg \
   --description 'Security Group para aplicacion RoadMap' --vpc-id $VPC_ID --query 'GroupId' --output text)
@@ -86,7 +86,7 @@ aws ec2 authorize-security-group-ingress --group-id $SG_ID \
 
 echo "Security Group configurado: $SG_ID"
 
-# 7. LANZAR INSTANCIA EC2
+# 8. LANZAR INSTANCIA EC2
 echo "Lanzando instancia EC2..."
 export INSTANCE_ID=$(aws ec2 run-instances \
   --image-id ami-0453ec754f44f9a4a \
@@ -101,15 +101,22 @@ yum install -y httpd
 systemctl start httpd
 systemctl enable httpd
 
-# Espera dinámica al disco extra
-while [ ! -b /dev/xvdf ]; do
+# Espera dinámica soportando discos Nitro (nvme) o estándar (xvdf)
+while [ ! -b /dev/nvme1n1 ] && [ ! -b /dev/xvdf ]; do
   sleep 5
 done
 
-# Formateo y montaje del EBS
-mkfs -t ext4 /dev/xvdf
+# Asignar la variable según el nombre que AWS haya elegido
+if [ -b /dev/nvme1n1 ]; then
+  DISCO="/dev/nvme1n1"
+else
+  DISCO="/dev/xvdf"
+fi
+
+# Formateo y montaje usando la variable correcta
+mkfs -t ext4 $DISCO
 mkdir -p /mnt/datos
-mount /dev/xvdf /mnt/datos
+mount $DISCO /mnt/datos
 
 # Configuración del sitio RoadMap en el volumen extra
 echo "<h1>Bienvenido al sistema RoadMap</h1>" > /mnt/datos/index.html
@@ -119,9 +126,13 @@ ln -s /mnt/datos /var/www/html' \
 
 aws ec2 create-tags --resources $INSTANCE_ID --tags Key=Name,Value=RoadMap-webserver
 
-echo "Lanzando instancia EC2: $INSTANCE_ID con servidor web incluido..."
+echo "Lanzando instancia EC2: $INSTANCE_ID..."
 
-# 8. CREAR Y ADJUNTAR VOLUMEN EBS ADICIONAL
+# 9. ESPERAR A QUE LA INSTANCIA ESTÉ LISTA (¡El cambio clave de sincronización!)
+echo "Esperando a que la instancia se inicialice antes de adjuntar el disco..."
+aws ec2 wait instance-running --instance-ids $INSTANCE_ID
+
+# 10. CREAR Y ADJUNTAR VOLUMEN EBS ADICIONAL
 echo "Creando volumen EBS de 8GB en $AZ1..."
 export VOL_ID=$(aws ec2 create-volume --size 8 --volume-type gp3 \
   --availability-zone $AZ1 --query 'VolumeId' --output text)
@@ -133,14 +144,11 @@ aws ec2 wait volume-available --volume-ids $VOL_ID
 
 echo "Adjuntando volumen a la instancia RoadMap..."
 aws ec2 attach-volume --volume-id $VOL_ID \
-  --instance-id $INSTANCE_ID --device /dev/sdf
+  --instance-id $INSTANCE_ID --device sdf
 
 echo "Volumen $VOL_ID adjuntado correctamente."
 
-# 9. VERIFICACIÓN FINAL
-echo "Esperando a que la instancia se inicialice (esto puede tomar un minuto)..."
-aws ec2 wait instance-running --instance-ids $INSTANCE_ID
-
+# 11. VERIFICACIÓN FINAL
 export PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID \
   --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
 
@@ -148,5 +156,5 @@ echo "=========================================================="
 echo "DESPLIEGUE EXITOSO"
 echo "Dirección IP Pública: $PUBLIC_IP"
 echo "URL del sitio: http://$PUBLIC_IP"
-echo "Nota: El sitio web puede tardar entre 1 y 2 minutos extra en responder después de encender."
+echo "Nota: El servidor web puede tardar entre 1 y 2 minutos extra en configurar el disco."
 echo "=========================================================="
