@@ -7,6 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.addEventListener('click', () => {
             menu.classList.toggle('hidden');
         });
+
+        // Cerrar menú al hacer clic en un enlace (para móviles)
+        const mobileLinks = menu.querySelectorAll('a');
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.add('hidden');
+            });
+        });
     }
 
     // 2. Lógica del Formulario Inteligente de Emergencia (Variables Temporales)
@@ -94,10 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Temperatura real usando Open-Meteo API 
         let currentTemp = 0;
+        let userLat = -41.4731; // Por defecto puerto montt
+        let userLng = -73.0676;
 
         function updateTemp() {
-            // Utilizamos la latitud/longitud de Llanquihue y pedimos el current_weather
-            const meteoUrl = "https://api.open-meteo.com/v1/forecast?latitude=-41.256&longitude=-73.0065&current_weather=true";
+            const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${userLat}&longitude=${userLng}&current_weather=true`;
 
             fetch(meteoUrl)
                 .then(response => {
@@ -114,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         }
 
-        updateTemp(); // Llamar inmediatamente al cargar
         // Actualizar cada 10 minutos (600000 ms) para no agotar el límite de la API gratuita
         setInterval(updateTemp, 600000);
 
@@ -216,19 +224,32 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') searchLocation();
         });
 
-        // Geolocalización
+        // Geolocalización y Carga Inicial
         const locationBtn = document.getElementById('locationBtn');
-        if(locationBtn) {
+
+        function applyLocation(lat, lng) {
+            userLat = lat;
+            userLng = lng;
+            updateTemp();
+            searchInput.value = `${lat}, ${lng}`;
+            searchLocation();
+            setTimeout(() => { searchInput.value = ""; }, 500);
+        }
+
+        function loadDefaultLocation() {
+            updateTemp();
+            searchInput.value = "Llanquihue, Chile";
+            searchLocation();
+            setTimeout(() => { searchInput.value = ""; }, 500);
+        }
+
+        if (locationBtn) {
             locationBtn.addEventListener('click', () => {
                 if (navigator.geolocation) {
                     searchInput.value = "Obteniendo ubicación...";
                     navigator.geolocation.getCurrentPosition(
                         (position) => {
-                            const lat = position.coords.latitude;
-                            const lng = position.coords.longitude;
-                            // Actualizar input con coordenadas y buscar
-                            searchInput.value = `${lat}, ${lng}`;
-                            searchLocation();
+                            applyLocation(position.coords.latitude, position.coords.longitude);
                         },
                         (error) => {
                             console.error("Error obteniendo ubicación:", error);
@@ -242,9 +263,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Carga inicial
-        searchInput.value = "Llanquihue, Chile";
-        searchLocation();
-        setTimeout(() => { searchInput.value = ""; }, 500);
+        // Carga inicial automática usando ubicación del usuario
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    applyLocation(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    console.error("Geolocalización inicial denegada o falló:", error);
+                    loadDefaultLocation();
+                }
+            );
+        } else {
+            loadDefaultLocation();
+        }
     }
 });

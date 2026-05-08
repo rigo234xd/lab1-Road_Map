@@ -1,4 +1,4 @@
-# 🚗 RoadMap - Infraestructura Cloud AWS
+# RoadMap - Infraestructura Cloud AWS
 
 **Autores:** Benjamín Olea y Rigoberto Alvarado
 
@@ -6,7 +6,7 @@ Este repositorio contiene el script de automatización y los archivos necesarios
 
 ---
 
-## 📋 1. Requisitos Previos
+## 1. Requisitos Previos
 
 Antes de ejecutar el script, asegúrate de tener tu entorno preparado:
 
@@ -18,7 +18,7 @@ Antes de ejecutar el script, asegúrate de tener tu entorno preparado:
 
 ---
 
-## 🚀 2. Ejecución del Despliegue
+## 2. Ejecución del Despliegue
 
 Una vez configurado lo anterior, abre la terminal de Git Bash en la carpeta raíz de tu proyecto y ejecuta el script de automatización:
 
@@ -28,7 +28,7 @@ _(Nota: Si usas una versión antigua del script y el proceso se pausa mostrando 
 
 ---
 
-## 📤 3. Subir los Archivos del Sitio Web
+## 3. Subir los Archivos del Sitio Web
 
 Cuando el script finalice, te entregará la **IP Pública** del servidor. Ahora debemos enviar los archivos locales de la página hacia la nube de AWS usando el comando:
 
@@ -36,20 +36,20 @@ Cuando el script finalice, te entregará la **IP Pública** del servidor. Ahora 
 
 ---
 
-## ⚙️ 4. Configuración Interna del Servidor
+## 4. Configuración Interna del Servidor
 
 Ahora necesitamos entrar al servidor para mover los archivos que acabamos de subir hacia el disco adicional de datos (volumen EBS).
 
-**1. Conéctate por SSH:**
+**1. Conectarse por SSH:**
 `ssh -i ruta/a/tu/archivo/mi-llave.pem ec2-user@COLOCAR_LA_IP`
 
-> ⚠️ **Atención:** Si es la primera vez que te conectas, la terminal te preguntará: _"Are you sure you want to continue connecting (yes/no/[fingerprint])?"_. Escribe **`yes`** y presiona Enter.
+> **Atención:** Si es la primera vez que te conectas, la terminal te preguntará: _"Are you sure you want to continue connecting (yes/no/[fingerprint])?"_. Escribe **`yes`** y presiona Enter.
 
-**2. Verifica los archivos:**
+**2. Verificar los archivos:**
 Una vez dentro del servidor, escribe `ls` y presiona Enter. Deberías ver los archivos de tu página web listados en la pantalla.
 
-**3. Mueve los archivos al disco web:**
-Ejecuta los siguientes comandos en orden para mover tu sitio web al disco de datos, ajustar los permisos y reiniciar el servidor web:
+**3. Mover los archivos al disco web:**
+Ejecutar los siguientes comandos en orden para mover tu sitio web al disco de datos, ajustar los permisos y reiniciar el servidor web:
 
 `sudo rm -rf /mnt/datos/*`
 `sudo mv /home/ec2-user/* /mnt/datos/ 2>/dev/null`
@@ -59,8 +59,8 @@ Ejecuta los siguientes comandos en orden para mover tu sitio web al disco de dat
 
 ---
 
-## 🌐 5. Acceso al Sitio
+## 5. Acceso al Sitio
 
-¡Puedes visualizar el proyecto ingresando la IP pública en cualquier navegador web.
+Se puede visualizar el proyecto ingresando la IP pública en cualquier navegador web.
 
-📍 **IP Pública:** http://3.238.140.110
+**IP Pública:** http://3.238.140.110
