@@ -1,6 +1,6 @@
 # 🚗 RoadMap - Infraestructura Cloud AWS
 
-**Autores:** Benjamín Olea & Rigoberto Alvarado
+**Autores:** Benjamín Olea y Rigoberto Alvarado
 
 Este repositorio contiene el script de automatización y los archivos necesarios para desplegar la infraestructura web del proyecto **RoadMap** utilizando los servicios de Amazon Web Services (AWS) mediante la línea de comandos (AWS CLI).
 
@@ -20,7 +20,7 @@ Antes de ejecutar el script, asegúrate de tener tu entorno preparado:
 
 ## 🚀 2. Ejecución del Despliegue
 
-Una vez configurado lo anterior, abre Git Bash en la carpeta raíz de tu proyecto y ejecuta el script de automatización:
+Una vez configurado lo anterior, abre la terminal de Git Bash en la carpeta raíz de tu proyecto y ejecuta el script de automatización:
 
 `./deploy.sh`
 
@@ -30,7 +30,7 @@ _(Nota: Si usas una versión antigua del script y el proceso se pausa mostrando 
 
 ## 📤 3. Subir los Archivos del Sitio Web
 
-Cuando el script finalice, te entregará la **IP Pública** de tu servidor. Ahora debemos enviar los archivos locales de tu página hacia la nube de AWS usando el comando seguro `scp`:
+Cuando el script finalice, te entregará la **IP Pública** del servidor. Ahora debemos enviar los archivos locales de la página hacia la nube de AWS usando el comando:
 
 `scp -i ruta/a/tu/archivo/mi-llave.pem -r ./sitio-web/* ec2-user@COLOCAR_LA_IP:/home/ec2-user/`
 
@@ -48,7 +48,7 @@ Ahora necesitamos entrar al servidor para mover los archivos que acabamos de sub
 **2. Verifica los archivos:**
 Una vez dentro del servidor, escribe `ls` y presiona Enter. Deberías ver los archivos de tu página web listados en la pantalla.
 
-**3. Mueve los archivos al disco web (Apache):**
+**3. Mueve los archivos al disco web:**
 Ejecuta los siguientes comandos en orden para mover tu sitio web al disco de datos, ajustar los permisos y reiniciar el servidor web:
 
 `sudo rm -rf /mnt/datos/*`
@@ -61,6 +61,6 @@ Ejecuta los siguientes comandos en orden para mover tu sitio web al disco de dat
 
 ## 🌐 5. Acceso al Sitio
 
-¡Tu plataforma ya está en línea! Puedes visualizar el proyecto ingresando la IP pública en cualquier navegador web.
+¡Puedes visualizar el proyecto ingresando la IP pública en cualquier navegador web.
 
-📍 **IP Pública de Producción:** http://3.238.140.110
+📍 **IP Pública:** http://3.238.140.110
